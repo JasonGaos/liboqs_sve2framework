@@ -111,6 +111,7 @@ static void set_available_cpu_extensions(void) {
 	cpu_ext_data[OQS_CPU_EXT_ARM_SHA2] = 1;
 	cpu_ext_data[OQS_CPU_EXT_ARM_SHA3] = macos_feature_detection("hw.optional.armv8_2_sha3");
 	cpu_ext_data[OQS_CPU_EXT_ARM_NEON] = macos_feature_detection("hw.optional.neon");
+	cpu_ext_data[OQS_CPU_EXT_ARM_SVE2] = 0;
 	/* mark that this function has been called */
 	cpu_ext_data[OQS_CPU_EXT_INIT] = 1;
 }
@@ -154,6 +155,7 @@ static void set_available_cpu_extensions(void) {
 	if (neon) {
 		cpu_ext_data[OQS_CPU_EXT_ARM_NEON] = 1;
 	}
+	cpu_ext_data[OQS_CPU_EXT_ARM_SVE2] = 0;
 }
 #else
 #include <sys/auxv.h>
@@ -162,6 +164,7 @@ static void set_available_cpu_extensions(void) {
 	/* mark that this function has been called */
 	cpu_ext_data[OQS_CPU_EXT_INIT] = 1;
 	unsigned long int hwcaps = getauxval(AT_HWCAP);
+	unsigned long int hwcaps2 = getauxval(AT_HWCAP2);
 	if (hwcaps & HWCAP_AES) {
 		cpu_ext_data[OQS_CPU_EXT_ARM_AES] = 1;
 	}
@@ -176,6 +179,11 @@ static void set_available_cpu_extensions(void) {
 	if (hwcaps & HWCAP_ASIMD) {
 		cpu_ext_data[OQS_CPU_EXT_ARM_NEON] = 1;
 	}
+#ifdef HWCAP2_SVE2
+	if (hwcaps2 & HWCAP2_SVE2) {
+		cpu_ext_data[OQS_CPU_EXT_ARM_SVE2] = 1;
+	}
+#endif
 }
 #endif
 #elif defined(OQS_DIST_ARM32v7_BUILD)

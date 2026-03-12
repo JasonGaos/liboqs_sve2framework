@@ -5,6 +5,26 @@
 
 set(_{{ family|upper }}_OBJS "")
 
+function(oqs_sig_add_object_target target)
+    cmake_parse_arguments(ARG "" "IMPL_DIR" "SOURCES;SOURCE_GLOBS;PRIVATE_COMPILE_OPTS;PUBLIC_COMPILE_OPTS" ${ARGN})
+
+    set(_sources ${ARG_SOURCES})
+    if(ARG_SOURCE_GLOBS)
+        file(GLOB_RECURSE _globbed_sources CONFIGURE_DEPENDS ${ARG_SOURCE_GLOBS})
+        list(APPEND _sources ${_globbed_sources})
+    endif()
+
+    add_library(${target} OBJECT ${_sources})
+    target_include_directories(${target} PRIVATE ${ARG_IMPL_DIR})
+    target_include_directories(${target} PRIVATE ${PROJECT_SOURCE_DIR}/src/common/pqclean_shims)
+    if(ARG_PRIVATE_COMPILE_OPTS)
+        target_compile_options(${target} PRIVATE ${ARG_PRIVATE_COMPILE_OPTS})
+    endif()
+    if(ARG_PUBLIC_COMPILE_OPTS)
+        target_compile_options(${target} PUBLIC ${ARG_PUBLIC_COMPILE_OPTS})
+    endif()
+endfunction()
+
 {%- if common_deps is defined %}
     {%- for common_dep in common_deps %}
 
@@ -28,16 +48,51 @@ endif()
         {%- if impl['name'] == scheme['default_implementation'] %}
 
 if(OQS_ENABLE_SIG_{{ family }}_{{ scheme['scheme_c'] }}{%- if 'alias_scheme' in scheme %} OR OQS_ENABLE_SIG_{{ family }}_{{ scheme['alias_scheme'] }}{%- endif %})
+    {%- if impl.get('cmake_fixed_sources') %}
+    set(_{{ family }}_{{ scheme['scheme'] }}_{{ impl['name'] }}_dir ${CMAKE_CURRENT_LIST_DIR}/{{ impl['upstream']['name'] }}_{{ scheme['pqclean_scheme'] }}_{{ impl['name'] }})
+    oqs_sig_add_object_target({{ family }}_{{ scheme['scheme'] }}_{{ impl['name'] }}
+        IMPL_DIR ${_{{ family }}_{{ scheme['scheme'] }}_{{ impl['name'] }}_dir}
+        SOURCES
+            ${_{{ family }}_{{ scheme['scheme'] }}_{{ impl['name'] }}_dir}/sig_{{ family }}_{{ scheme['scheme'] }}.c
+            {%- for source_file in impl['cmake_fixed_sources'] %}
+            ${_{{ family }}_{{ scheme['scheme'] }}_{{ impl['name'] }}_dir}/{{ source_file }}
+            {%- endfor %}
+        SOURCE_GLOBS
+            ${_{{ family }}_{{ scheme['scheme'] }}_{{ impl['name'] }}_dir}/{{ impl['cmake_backend_glob_dir'] }}/*.c
+            ${_{{ family }}_{{ scheme['scheme'] }}_{{ impl['name'] }}_dir}/{{ impl['cmake_backend_glob_dir'] }}/*.S
+        PUBLIC_COMPILE_OPTS {{ impl['compile_opts'] }}
+    )
+    {%- else %}
     add_library({{ family }}_{{ scheme['scheme'] }}_{{ impl['name'] }} OBJECT sig_{{ family }}_{{ scheme['scheme'] }}.c {% for source_file in impl['sources']|sort -%}{{ impl['upstream']['name'] }}_{{ scheme['pqclean_scheme'] }}_{{ impl['name'] }}/{{ source_file }}{%- if not loop.last %} {% endif -%}{%- endfor -%})
            {%- if impl['compile_opts'] %}
     target_compile_options({{ family }}_{{ scheme['scheme'] }}_{{ impl['name'] }} PUBLIC {{ impl['compile_opts'] }})
            {%- endif -%}
+    {%- endif %}
 
         {%- else %}
 
 if(OQS_ENABLE_SIG_{{ family }}_{{ scheme['scheme_c'] }}_{{ impl['name'] }}{%- if 'alias_scheme' in scheme %} OR OQS_ENABLE_SIG_{{ family }}_{{ scheme['alias_scheme'] }}_{{ impl['name'] }}{%- endif %})
-    add_library({{ family }}_{{ scheme['scheme'] }}_{{ impl['name'] }} OBJECT {% for source_file in impl['sources']|sort -%}{{ impl['upstream']['name'] }}_{{ scheme['pqclean_scheme'] }}_{{ impl['name'] }}/{{ source_file }}{%- if not loop.last %} {% endif -%}{%- endfor -%})
+    {%- if impl.get('cmake_fixed_sources') %}
+    set(_{{ family }}_{{ scheme['scheme'] }}_{{ impl['name'] }}_dir ${CMAKE_CURRENT_LIST_DIR}/{{ impl['upstream']['name'] }}_{{ scheme['pqclean_scheme'] }}_{{ impl['name'] }})
+    oqs_sig_add_object_target({{ family }}_{{ scheme['scheme'] }}_{{ impl['name'] }}
+        IMPL_DIR ${_{{ family }}_{{ scheme['scheme'] }}_{{ impl['name'] }}_dir}
+        SOURCES
+            {%- for source_file in impl['cmake_fixed_sources'] %}
+            ${_{{ family }}_{{ scheme['scheme'] }}_{{ impl['name'] }}_dir}/{{ source_file }}
+            {%- endfor %}
+        SOURCE_GLOBS
+            ${_{{ family }}_{{ scheme['scheme'] }}_{{ impl['name'] }}_dir}/{{ impl['cmake_backend_glob_dir'] }}/*.c
+            ${_{{ family }}_{{ scheme['scheme'] }}_{{ impl['name'] }}_dir}/{{ impl['cmake_backend_glob_dir'] }}/*.S
+        PUBLIC_COMPILE_OPTS {{ impl['compile_opts'] }}
+        {%- if impl['required_flags'] %}
+        PRIVATE_COMPILE_OPTS {%- for flag in impl['required_flags'] %}{%- if flag == 'arm_sha3' %} -march=armv8-a+crypto+sha3 {%- else -%}{%- if flag != 'arm_neon' and flag != 'arm_sve2' %} -m{%- if flag == 'bmi1' -%} bmi {%- elif flag == 'sse4_1' -%} sse4.1  {%- elif flag == 'pclmulqdq' -%} pclmul {%- else -%}{{ flag }}{%- endif -%}{%- endif -%}{%- endif -%}{%- endfor -%}
         {%- endif %}
+    )
+    {%- else %}
+    add_library({{ family }}_{{ scheme['scheme'] }}_{{ impl['name'] }} OBJECT {% for source_file in impl['sources']|sort -%}{{ impl['upstream']['name'] }}_{{ scheme['pqclean_scheme'] }}_{{ impl['name'] }}/{{ source_file }}{%- if not loop.last %} {% endif -%}{%- endfor -%})
+    {%- endif %}
+        {%- endif %}
+        {%- if not impl.get('cmake_fixed_sources') %}
     target_include_directories({{ family }}_{{ scheme['scheme'] }}_{{ impl['name'] }} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/{{ impl['upstream']['name'] }}_{{ scheme['pqclean_scheme'] }}_{{ impl['name'] }})
     target_include_directories({{ family }}_{{ scheme['scheme'] }}_{{ impl['name'] }} PRIVATE ${PROJECT_SOURCE_DIR}/src/common/pqclean_shims)
         {%- if impl['name'] != scheme['default_implementation'] and impl['required_flags'] %}
@@ -46,10 +101,10 @@ if(OQS_ENABLE_SIG_{{ family }}_{{ scheme['scheme_c'] }}_{{ impl['name'] }}{%- if
         {%- if impl['compile_opts'] %}
     target_compile_options({{ family }}_{{ scheme['scheme'] }}_{{ impl['name'] }} PUBLIC {{ impl['compile_opts'] }})
         {%- endif %}
+        {%- endif %}
     set(_{{ family|upper }}_OBJS ${_{{ family|upper }}_OBJS} $<TARGET_OBJECTS:{{ family }}_{{ scheme['scheme'] }}_{{ impl['name'] }}>)
 endif()
     {%- endfor -%}
 {%- endfor %}
 
 set({{ family|upper }}_OBJS ${_{{ family|upper }}_OBJS} PARENT_SCOPE)
-

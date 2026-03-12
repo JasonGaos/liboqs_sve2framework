@@ -5,12 +5,53 @@
 
 set(_ML_DSA_OBJS "")
 
+function(oqs_sig_add_object_target target)
+    cmake_parse_arguments(ARG "" "IMPL_DIR" "SOURCES;SOURCE_GLOBS;PRIVATE_COMPILE_OPTS;PUBLIC_COMPILE_OPTS" ${ARGN})
+
+    set(_sources ${ARG_SOURCES})
+    if(ARG_SOURCE_GLOBS)
+        file(GLOB_RECURSE _globbed_sources CONFIGURE_DEPENDS ${ARG_SOURCE_GLOBS})
+        list(APPEND _sources ${_globbed_sources})
+    endif()
+
+    add_library(${target} OBJECT ${_sources})
+    target_include_directories(${target} PRIVATE ${ARG_IMPL_DIR})
+    target_include_directories(${target} PRIVATE ${PROJECT_SOURCE_DIR}/src/common/pqclean_shims)
+    if(ARG_PRIVATE_COMPILE_OPTS)
+        target_compile_options(${target} PRIVATE ${ARG_PRIVATE_COMPILE_OPTS})
+    endif()
+    if(ARG_PUBLIC_COMPILE_OPTS)
+        target_compile_options(${target} PUBLIC ${ARG_PUBLIC_COMPILE_OPTS})
+    endif()
+endfunction()
+
+function(oqs_add_ml_dsa_aarch64_target level backend config_header)
+    set(_impl_dir ${CMAKE_CURRENT_LIST_DIR}/mldsa-native_ml-dsa-${level}_${backend})
+    oqs_sig_add_object_target(ml_dsa_${level}_${backend}
+        IMPL_DIR ${_impl_dir}
+        SOURCES
+            ${_impl_dir}/mldsa/src/ct.c
+            ${_impl_dir}/mldsa/src/debug.c
+            ${_impl_dir}/mldsa/src/packing.c
+            ${_impl_dir}/mldsa/src/poly.c
+            ${_impl_dir}/mldsa/src/poly_kl.c
+            ${_impl_dir}/mldsa/src/polyvec.c
+            ${_impl_dir}/mldsa/src/sign.c
+        SOURCE_GLOBS
+            ${_impl_dir}/mldsa/src/native/${backend}/src/*.c
+            ${_impl_dir}/mldsa/src/native/${backend}/src/*.S
+        PUBLIC_COMPILE_OPTS
+            -DMLD_CONFIG_PARAMETER_SET=${level}
+            -DMLD_CONFIG_FILE="../../integration/liboqs/${config_header}"
+    )
+    set(_ML_DSA_OBJS ${_ML_DSA_OBJS} $<TARGET_OBJECTS:ml_dsa_${level}_${backend}> PARENT_SCOPE)
+endfunction()
+
 if(OQS_ENABLE_SIG_ml_dsa_44)
     add_library(ml_dsa_44_ref OBJECT sig_ml_dsa_44.c mldsa-native_ml-dsa-44_ref/mldsa/src/ct.c mldsa-native_ml-dsa-44_ref/mldsa/src/debug.c mldsa-native_ml-dsa-44_ref/mldsa/src/packing.c mldsa-native_ml-dsa-44_ref/mldsa/src/poly.c mldsa-native_ml-dsa-44_ref/mldsa/src/poly_kl.c mldsa-native_ml-dsa-44_ref/mldsa/src/polyvec.c mldsa-native_ml-dsa-44_ref/mldsa/src/sign.c)
     target_compile_options(ml_dsa_44_ref PUBLIC -DMLD_CONFIG_PARAMETER_SET=44 -DMLD_CONFIG_FILE="../../integration/liboqs/config_c.h")
     target_include_directories(ml_dsa_44_ref PRIVATE ${CMAKE_CURRENT_LIST_DIR}/mldsa-native_ml-dsa-44_ref)
     target_include_directories(ml_dsa_44_ref PRIVATE ${PROJECT_SOURCE_DIR}/src/common/pqclean_shims)
-    target_compile_options(ml_dsa_44_ref PUBLIC -DMLD_CONFIG_PARAMETER_SET=44 -DMLD_CONFIG_FILE="../../integration/liboqs/config_c.h")
     set(_ML_DSA_OBJS ${_ML_DSA_OBJS} $<TARGET_OBJECTS:ml_dsa_44_ref>)
 endif()
 
@@ -23,13 +64,12 @@ if(OQS_ENABLE_SIG_ml_dsa_44_x86_64)
     set(_ML_DSA_OBJS ${_ML_DSA_OBJS} $<TARGET_OBJECTS:ml_dsa_44_x86_64>)
 endif()
 
-if(OQS_ENABLE_SIG_ml_dsa_44_aarch64)
-    add_library(ml_dsa_44_aarch64 OBJECT mldsa-native_ml-dsa-44_aarch64/mldsa/src/ct.c mldsa-native_ml-dsa-44_aarch64/mldsa/src/debug.c mldsa-native_ml-dsa-44_aarch64/mldsa/src/native/aarch64/src/aarch64_zetas.c mldsa-native_ml-dsa-44_aarch64/mldsa/src/native/aarch64/src/intt.S mldsa-native_ml-dsa-44_aarch64/mldsa/src/native/aarch64/src/mld_polyvecl_pointwise_acc_montgomery_l4.S mldsa-native_ml-dsa-44_aarch64/mldsa/src/native/aarch64/src/mld_polyvecl_pointwise_acc_montgomery_l5.S mldsa-native_ml-dsa-44_aarch64/mldsa/src/native/aarch64/src/mld_polyvecl_pointwise_acc_montgomery_l7.S mldsa-native_ml-dsa-44_aarch64/mldsa/src/native/aarch64/src/ntt.S mldsa-native_ml-dsa-44_aarch64/mldsa/src/native/aarch64/src/pointwise_montgomery.S mldsa-native_ml-dsa-44_aarch64/mldsa/src/native/aarch64/src/poly_caddq_asm.S mldsa-native_ml-dsa-44_aarch64/mldsa/src/native/aarch64/src/poly_chknorm_asm.S mldsa-native_ml-dsa-44_aarch64/mldsa/src/native/aarch64/src/poly_decompose_32_asm.S mldsa-native_ml-dsa-44_aarch64/mldsa/src/native/aarch64/src/poly_decompose_88_asm.S mldsa-native_ml-dsa-44_aarch64/mldsa/src/native/aarch64/src/poly_use_hint_32_asm.S mldsa-native_ml-dsa-44_aarch64/mldsa/src/native/aarch64/src/poly_use_hint_88_asm.S mldsa-native_ml-dsa-44_aarch64/mldsa/src/native/aarch64/src/polyz_unpack_17_asm.S mldsa-native_ml-dsa-44_aarch64/mldsa/src/native/aarch64/src/polyz_unpack_19_asm.S mldsa-native_ml-dsa-44_aarch64/mldsa/src/native/aarch64/src/polyz_unpack_table.c mldsa-native_ml-dsa-44_aarch64/mldsa/src/native/aarch64/src/rej_uniform_asm.S mldsa-native_ml-dsa-44_aarch64/mldsa/src/native/aarch64/src/rej_uniform_eta2_asm.S mldsa-native_ml-dsa-44_aarch64/mldsa/src/native/aarch64/src/rej_uniform_eta4_asm.S mldsa-native_ml-dsa-44_aarch64/mldsa/src/native/aarch64/src/rej_uniform_eta_table.c mldsa-native_ml-dsa-44_aarch64/mldsa/src/native/aarch64/src/rej_uniform_table.c mldsa-native_ml-dsa-44_aarch64/mldsa/src/packing.c mldsa-native_ml-dsa-44_aarch64/mldsa/src/poly.c mldsa-native_ml-dsa-44_aarch64/mldsa/src/poly_kl.c mldsa-native_ml-dsa-44_aarch64/mldsa/src/polyvec.c mldsa-native_ml-dsa-44_aarch64/mldsa/src/sign.c)
-    target_include_directories(ml_dsa_44_aarch64 PRIVATE ${CMAKE_CURRENT_LIST_DIR}/mldsa-native_ml-dsa-44_aarch64)
-    target_include_directories(ml_dsa_44_aarch64 PRIVATE ${PROJECT_SOURCE_DIR}/src/common/pqclean_shims)
-    target_compile_options(ml_dsa_44_aarch64 PRIVATE)
-    target_compile_options(ml_dsa_44_aarch64 PUBLIC -DMLD_CONFIG_PARAMETER_SET=44 -DMLD_CONFIG_FILE="../../integration/liboqs/config_aarch64.h")
-    set(_ML_DSA_OBJS ${_ML_DSA_OBJS} $<TARGET_OBJECTS:ml_dsa_44_aarch64>)
+if(OQS_ENABLE_SIG_ml_dsa_44_aarch64_neon)
+    oqs_add_ml_dsa_aarch64_target(44 aarch64_neon config_aarch64_neon.h)
+endif()
+
+if(OQS_ENABLE_SIG_ml_dsa_44_aarch64_sve2)
+    oqs_add_ml_dsa_aarch64_target(44 aarch64_sve2 config_aarch64_sve2.h)
 endif()
 
 if(OQS_ENABLE_SIG_ml_dsa_65)
@@ -37,7 +77,6 @@ if(OQS_ENABLE_SIG_ml_dsa_65)
     target_compile_options(ml_dsa_65_ref PUBLIC -DMLD_CONFIG_PARAMETER_SET=65 -DMLD_CONFIG_FILE="../../integration/liboqs/config_c.h")
     target_include_directories(ml_dsa_65_ref PRIVATE ${CMAKE_CURRENT_LIST_DIR}/mldsa-native_ml-dsa-65_ref)
     target_include_directories(ml_dsa_65_ref PRIVATE ${PROJECT_SOURCE_DIR}/src/common/pqclean_shims)
-    target_compile_options(ml_dsa_65_ref PUBLIC -DMLD_CONFIG_PARAMETER_SET=65 -DMLD_CONFIG_FILE="../../integration/liboqs/config_c.h")
     set(_ML_DSA_OBJS ${_ML_DSA_OBJS} $<TARGET_OBJECTS:ml_dsa_65_ref>)
 endif()
 
@@ -50,13 +89,12 @@ if(OQS_ENABLE_SIG_ml_dsa_65_x86_64)
     set(_ML_DSA_OBJS ${_ML_DSA_OBJS} $<TARGET_OBJECTS:ml_dsa_65_x86_64>)
 endif()
 
-if(OQS_ENABLE_SIG_ml_dsa_65_aarch64)
-    add_library(ml_dsa_65_aarch64 OBJECT mldsa-native_ml-dsa-65_aarch64/mldsa/src/ct.c mldsa-native_ml-dsa-65_aarch64/mldsa/src/debug.c mldsa-native_ml-dsa-65_aarch64/mldsa/src/native/aarch64/src/aarch64_zetas.c mldsa-native_ml-dsa-65_aarch64/mldsa/src/native/aarch64/src/intt.S mldsa-native_ml-dsa-65_aarch64/mldsa/src/native/aarch64/src/mld_polyvecl_pointwise_acc_montgomery_l4.S mldsa-native_ml-dsa-65_aarch64/mldsa/src/native/aarch64/src/mld_polyvecl_pointwise_acc_montgomery_l5.S mldsa-native_ml-dsa-65_aarch64/mldsa/src/native/aarch64/src/mld_polyvecl_pointwise_acc_montgomery_l7.S mldsa-native_ml-dsa-65_aarch64/mldsa/src/native/aarch64/src/ntt.S mldsa-native_ml-dsa-65_aarch64/mldsa/src/native/aarch64/src/pointwise_montgomery.S mldsa-native_ml-dsa-65_aarch64/mldsa/src/native/aarch64/src/poly_caddq_asm.S mldsa-native_ml-dsa-65_aarch64/mldsa/src/native/aarch64/src/poly_chknorm_asm.S mldsa-native_ml-dsa-65_aarch64/mldsa/src/native/aarch64/src/poly_decompose_32_asm.S mldsa-native_ml-dsa-65_aarch64/mldsa/src/native/aarch64/src/poly_decompose_88_asm.S mldsa-native_ml-dsa-65_aarch64/mldsa/src/native/aarch64/src/poly_use_hint_32_asm.S mldsa-native_ml-dsa-65_aarch64/mldsa/src/native/aarch64/src/poly_use_hint_88_asm.S mldsa-native_ml-dsa-65_aarch64/mldsa/src/native/aarch64/src/polyz_unpack_17_asm.S mldsa-native_ml-dsa-65_aarch64/mldsa/src/native/aarch64/src/polyz_unpack_19_asm.S mldsa-native_ml-dsa-65_aarch64/mldsa/src/native/aarch64/src/polyz_unpack_table.c mldsa-native_ml-dsa-65_aarch64/mldsa/src/native/aarch64/src/rej_uniform_asm.S mldsa-native_ml-dsa-65_aarch64/mldsa/src/native/aarch64/src/rej_uniform_eta2_asm.S mldsa-native_ml-dsa-65_aarch64/mldsa/src/native/aarch64/src/rej_uniform_eta4_asm.S mldsa-native_ml-dsa-65_aarch64/mldsa/src/native/aarch64/src/rej_uniform_eta_table.c mldsa-native_ml-dsa-65_aarch64/mldsa/src/native/aarch64/src/rej_uniform_table.c mldsa-native_ml-dsa-65_aarch64/mldsa/src/packing.c mldsa-native_ml-dsa-65_aarch64/mldsa/src/poly.c mldsa-native_ml-dsa-65_aarch64/mldsa/src/poly_kl.c mldsa-native_ml-dsa-65_aarch64/mldsa/src/polyvec.c mldsa-native_ml-dsa-65_aarch64/mldsa/src/sign.c)
-    target_include_directories(ml_dsa_65_aarch64 PRIVATE ${CMAKE_CURRENT_LIST_DIR}/mldsa-native_ml-dsa-65_aarch64)
-    target_include_directories(ml_dsa_65_aarch64 PRIVATE ${PROJECT_SOURCE_DIR}/src/common/pqclean_shims)
-    target_compile_options(ml_dsa_65_aarch64 PRIVATE)
-    target_compile_options(ml_dsa_65_aarch64 PUBLIC -DMLD_CONFIG_PARAMETER_SET=65 -DMLD_CONFIG_FILE="../../integration/liboqs/config_aarch64.h")
-    set(_ML_DSA_OBJS ${_ML_DSA_OBJS} $<TARGET_OBJECTS:ml_dsa_65_aarch64>)
+if(OQS_ENABLE_SIG_ml_dsa_65_aarch64_neon)
+    oqs_add_ml_dsa_aarch64_target(65 aarch64_neon config_aarch64_neon.h)
+endif()
+
+if(OQS_ENABLE_SIG_ml_dsa_65_aarch64_sve2)
+    oqs_add_ml_dsa_aarch64_target(65 aarch64_sve2 config_aarch64_sve2.h)
 endif()
 
 if(OQS_ENABLE_SIG_ml_dsa_87)
@@ -64,7 +102,6 @@ if(OQS_ENABLE_SIG_ml_dsa_87)
     target_compile_options(ml_dsa_87_ref PUBLIC -DMLD_CONFIG_PARAMETER_SET=87 -DMLD_CONFIG_FILE="../../integration/liboqs/config_c.h")
     target_include_directories(ml_dsa_87_ref PRIVATE ${CMAKE_CURRENT_LIST_DIR}/mldsa-native_ml-dsa-87_ref)
     target_include_directories(ml_dsa_87_ref PRIVATE ${PROJECT_SOURCE_DIR}/src/common/pqclean_shims)
-    target_compile_options(ml_dsa_87_ref PUBLIC -DMLD_CONFIG_PARAMETER_SET=87 -DMLD_CONFIG_FILE="../../integration/liboqs/config_c.h")
     set(_ML_DSA_OBJS ${_ML_DSA_OBJS} $<TARGET_OBJECTS:ml_dsa_87_ref>)
 endif()
 
@@ -77,13 +114,12 @@ if(OQS_ENABLE_SIG_ml_dsa_87_x86_64)
     set(_ML_DSA_OBJS ${_ML_DSA_OBJS} $<TARGET_OBJECTS:ml_dsa_87_x86_64>)
 endif()
 
-if(OQS_ENABLE_SIG_ml_dsa_87_aarch64)
-    add_library(ml_dsa_87_aarch64 OBJECT mldsa-native_ml-dsa-87_aarch64/mldsa/src/ct.c mldsa-native_ml-dsa-87_aarch64/mldsa/src/debug.c mldsa-native_ml-dsa-87_aarch64/mldsa/src/native/aarch64/src/aarch64_zetas.c mldsa-native_ml-dsa-87_aarch64/mldsa/src/native/aarch64/src/intt.S mldsa-native_ml-dsa-87_aarch64/mldsa/src/native/aarch64/src/mld_polyvecl_pointwise_acc_montgomery_l4.S mldsa-native_ml-dsa-87_aarch64/mldsa/src/native/aarch64/src/mld_polyvecl_pointwise_acc_montgomery_l5.S mldsa-native_ml-dsa-87_aarch64/mldsa/src/native/aarch64/src/mld_polyvecl_pointwise_acc_montgomery_l7.S mldsa-native_ml-dsa-87_aarch64/mldsa/src/native/aarch64/src/ntt.S mldsa-native_ml-dsa-87_aarch64/mldsa/src/native/aarch64/src/pointwise_montgomery.S mldsa-native_ml-dsa-87_aarch64/mldsa/src/native/aarch64/src/poly_caddq_asm.S mldsa-native_ml-dsa-87_aarch64/mldsa/src/native/aarch64/src/poly_chknorm_asm.S mldsa-native_ml-dsa-87_aarch64/mldsa/src/native/aarch64/src/poly_decompose_32_asm.S mldsa-native_ml-dsa-87_aarch64/mldsa/src/native/aarch64/src/poly_decompose_88_asm.S mldsa-native_ml-dsa-87_aarch64/mldsa/src/native/aarch64/src/poly_use_hint_32_asm.S mldsa-native_ml-dsa-87_aarch64/mldsa/src/native/aarch64/src/poly_use_hint_88_asm.S mldsa-native_ml-dsa-87_aarch64/mldsa/src/native/aarch64/src/polyz_unpack_17_asm.S mldsa-native_ml-dsa-87_aarch64/mldsa/src/native/aarch64/src/polyz_unpack_19_asm.S mldsa-native_ml-dsa-87_aarch64/mldsa/src/native/aarch64/src/polyz_unpack_table.c mldsa-native_ml-dsa-87_aarch64/mldsa/src/native/aarch64/src/rej_uniform_asm.S mldsa-native_ml-dsa-87_aarch64/mldsa/src/native/aarch64/src/rej_uniform_eta2_asm.S mldsa-native_ml-dsa-87_aarch64/mldsa/src/native/aarch64/src/rej_uniform_eta4_asm.S mldsa-native_ml-dsa-87_aarch64/mldsa/src/native/aarch64/src/rej_uniform_eta_table.c mldsa-native_ml-dsa-87_aarch64/mldsa/src/native/aarch64/src/rej_uniform_table.c mldsa-native_ml-dsa-87_aarch64/mldsa/src/packing.c mldsa-native_ml-dsa-87_aarch64/mldsa/src/poly.c mldsa-native_ml-dsa-87_aarch64/mldsa/src/poly_kl.c mldsa-native_ml-dsa-87_aarch64/mldsa/src/polyvec.c mldsa-native_ml-dsa-87_aarch64/mldsa/src/sign.c)
-    target_include_directories(ml_dsa_87_aarch64 PRIVATE ${CMAKE_CURRENT_LIST_DIR}/mldsa-native_ml-dsa-87_aarch64)
-    target_include_directories(ml_dsa_87_aarch64 PRIVATE ${PROJECT_SOURCE_DIR}/src/common/pqclean_shims)
-    target_compile_options(ml_dsa_87_aarch64 PRIVATE)
-    target_compile_options(ml_dsa_87_aarch64 PUBLIC -DMLD_CONFIG_PARAMETER_SET=87 -DMLD_CONFIG_FILE="../../integration/liboqs/config_aarch64.h")
-    set(_ML_DSA_OBJS ${_ML_DSA_OBJS} $<TARGET_OBJECTS:ml_dsa_87_aarch64>)
+if(OQS_ENABLE_SIG_ml_dsa_87_aarch64_neon)
+    oqs_add_ml_dsa_aarch64_target(87 aarch64_neon config_aarch64_neon.h)
+endif()
+
+if(OQS_ENABLE_SIG_ml_dsa_87_aarch64_sve2)
+    oqs_add_ml_dsa_aarch64_target(87 aarch64_sve2 config_aarch64_sve2.h)
 endif()
 
 set(ML_DSA_OBJS ${_ML_DSA_OBJS} PARENT_SCOPE)

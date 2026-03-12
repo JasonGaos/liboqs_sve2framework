@@ -148,22 +148,23 @@ extern int PQCLEAN_{{ scheme['pqclean_scheme_c']|upper }}_{{ impl['name']|upper 
 
 OQS_API OQS_STATUS OQS_SIG_{{ family }}_{{ scheme['scheme'] }}_keypair(uint8_t *public_key, uint8_t *secret_key) {
     {%- for impl in scheme['metadata']['implementations'] if impl['name'] != scheme['default_implementation'] %}
+    {%- set runtime_required_flags = impl.get('runtime_required_flags', impl.get('required_flags', false)) %}
     {%- if loop.first %}
 #if defined(OQS_ENABLE_SIG_{{ family }}_{{ scheme['scheme'] }}_{{ impl['name'] }}) {%- if 'alias_scheme' in scheme %} || defined(OQS_ENABLE_SIG_{{ family }}_{{ scheme['alias_scheme'] }}_{{ impl['name'] }}){%- endif %}
     {%- else %}
 #elif defined(OQS_ENABLE_SIG_{{ family }}_{{ scheme['scheme'] }}_{{ impl['name'] }}) {%- if 'alias_scheme' in scheme %} || defined(OQS_ENABLE_SIG_{{ family }}_{{ scheme['alias_scheme'] }}_{{ impl['name'] }}){%- endif %}
     {%- endif %}
-    {%- if impl.get('required_flags', false) %}
+    {%- if runtime_required_flags %}
 #if defined(OQS_DIST_BUILD)
-	if ({%- for flag in impl['required_flags'] -%}OQS_CPU_has_extension(OQS_CPU_EXT_{{ flag|upper }}){%- if not loop.last %} && {% endif -%}{%- endfor -%}) {
+	if ({%- for flag in runtime_required_flags -%}OQS_CPU_has_extension(OQS_CPU_EXT_{{ flag|upper }}){%- if not loop.last %} && {% endif -%}{%- endfor -%}) {
 #endif /* OQS_DIST_BUILD */
     {%- endif %}
            {%- if impl['signature_keypair'] %}
-	{% if impl.get('required_flags', false) %}	{% endif %}return (OQS_STATUS) {{ impl['signature_keypair'] }}(public_key, secret_key);
+	{% if runtime_required_flags %}	{% endif %}return (OQS_STATUS) {{ impl['signature_keypair'] }}(public_key, secret_key);
            {%- else %}
-	{% if impl.get('required_flags', false) %}	{% endif %}return (OQS_STATUS) PQCLEAN_{{ scheme['pqclean_scheme_c']|upper }}_{{ impl['name']|upper }}_crypto_sign_keypair(public_key, secret_key);
+	{% if runtime_required_flags %}	{% endif %}return (OQS_STATUS) PQCLEAN_{{ scheme['pqclean_scheme_c']|upper }}_{{ impl['name']|upper }}_crypto_sign_keypair(public_key, secret_key);
            {%- endif %}
-    {%- if impl.get('required_flags', false) %}
+    {%- if runtime_required_flags %}
 #if defined(OQS_DIST_BUILD)
 	} else {
 		return (OQS_STATUS) {{ scheme['metadata']['default_keypair_signature'] }}(public_key, secret_key);
@@ -182,26 +183,27 @@ OQS_API OQS_STATUS OQS_SIG_{{ family }}_{{ scheme['scheme'] }}_keypair(uint8_t *
 
 OQS_API OQS_STATUS OQS_SIG_{{ family }}_{{ scheme['scheme'] }}_sign(uint8_t *signature, size_t *signature_len, const uint8_t *message, size_t message_len, const uint8_t *secret_key) {
     {%- for impl in scheme['metadata']['implementations'] if impl['name'] != scheme['default_implementation'] %}
+    {%- set runtime_required_flags = impl.get('runtime_required_flags', impl.get('required_flags', false)) %}
     {%- if loop.first %}
 #if defined(OQS_ENABLE_SIG_{{ family }}_{{ scheme['scheme'] }}_{{ impl['name'] }}) {%- if 'alias_scheme' in scheme %} || defined(OQS_ENABLE_SIG_{{ family }}_{{ scheme['alias_scheme'] }}_{{ impl['name'] }}){%- endif %}
     {%- else %}
 #elif defined(OQS_ENABLE_SIG_{{ family }}_{{ scheme['scheme'] }}_{{ impl['name'] }}) {%- if 'alias_scheme' in scheme %} || defined(OQS_ENABLE_SIG_{{ family }}_{{ scheme['alias_scheme'] }}_{{ impl['name'] }}){%- endif %}
     {%- endif %}
-    {%- if impl.get('required_flags', false) %}
+    {%- if runtime_required_flags %}
 #if defined(OQS_DIST_BUILD)
-	if ({%- for flag in impl['required_flags'] -%}OQS_CPU_has_extension(OQS_CPU_EXT_{{ flag|upper }}){%- if not loop.last %} && {% endif -%}{%- endfor -%}) {
+	if ({%- for flag in runtime_required_flags -%}OQS_CPU_has_extension(OQS_CPU_EXT_{{ flag|upper }}){%- if not loop.last %} && {% endif -%}{%- endfor -%}) {
 #endif /* OQS_DIST_BUILD */
     {%- endif %}
            {%- if impl['signature_signature'] %}
            {%- if 'api-with-context-string' in impl and impl['api-with-context-string'] %}
-	{% if impl.get('required_flags', false) %}	{% endif %}return (OQS_STATUS) {{ impl['signature_signature'] }}(signature, signature_len, message, message_len, NULL, 0, secret_key);
+	{% if runtime_required_flags %}	{% endif %}return (OQS_STATUS) {{ impl['signature_signature'] }}(signature, signature_len, message, message_len, NULL, 0, secret_key);
            {%- else %}
-	{% if impl.get('required_flags', false) %}	{% endif %}return (OQS_STATUS) {{ impl['signature_signature'] }}(signature, signature_len, message, message_len, secret_key);
+	{% if runtime_required_flags %}	{% endif %}return (OQS_STATUS) {{ impl['signature_signature'] }}(signature, signature_len, message, message_len, secret_key);
            {%- endif %}
            {%- else %}
-	{% if impl.get('required_flags', false) %}	{% endif %}return (OQS_STATUS) PQCLEAN_{{ scheme['pqclean_scheme_c']|upper }}_{{ impl['name']|upper }}_crypto_sign_signature(signature, signature_len, message, message_len, secret_key);
+	{% if runtime_required_flags %}	{% endif %}return (OQS_STATUS) PQCLEAN_{{ scheme['pqclean_scheme_c']|upper }}_{{ impl['name']|upper }}_crypto_sign_signature(signature, signature_len, message, message_len, secret_key);
            {%- endif %}
-    {%- if impl.get('required_flags', false) %}
+    {%- if runtime_required_flags %}
 #if defined(OQS_DIST_BUILD)
 	} else {
         {%- if 'api-with-context-string' in impl and impl['api-with-context-string'] %}
@@ -229,26 +231,27 @@ OQS_API OQS_STATUS OQS_SIG_{{ family }}_{{ scheme['scheme'] }}_sign(uint8_t *sig
 
 OQS_API OQS_STATUS OQS_SIG_{{ family }}_{{ scheme['scheme'] }}_verify(const uint8_t *message, size_t message_len, const uint8_t *signature, size_t signature_len, const uint8_t *public_key) {
     {%- for impl in scheme['metadata']['implementations'] if impl['name'] != scheme['default_implementation'] %}
+    {%- set runtime_required_flags = impl.get('runtime_required_flags', impl.get('required_flags', false)) %}
     {%- if loop.first %}
 #if defined(OQS_ENABLE_SIG_{{ family }}_{{ scheme['scheme'] }}_{{ impl['name'] }}) {%- if 'alias_scheme' in scheme %} || defined(OQS_ENABLE_SIG_{{ family }}_{{ scheme['alias_scheme'] }}_{{ impl['name'] }}){%- endif %}
     {%- else %}
 #elif defined(OQS_ENABLE_SIG_{{ family }}_{{ scheme['scheme'] }}_{{ impl['name'] }}) {%- if 'alias_scheme' in scheme %} || defined(OQS_ENABLE_SIG_{{ family }}_{{ scheme['alias_scheme'] }}_{{ impl['name'] }}){%- endif %}
     {%- endif %}
-    {%- if impl.get('required_flags', false) %}
+    {%- if runtime_required_flags %}
 #if defined(OQS_DIST_BUILD)
-	if ({%- for flag in impl['required_flags'] -%}OQS_CPU_has_extension(OQS_CPU_EXT_{{ flag|upper }}){%- if not loop.last %} && {% endif -%}{%- endfor -%}) {
+	if ({%- for flag in runtime_required_flags -%}OQS_CPU_has_extension(OQS_CPU_EXT_{{ flag|upper }}){%- if not loop.last %} && {% endif -%}{%- endfor -%}) {
 #endif /* OQS_DIST_BUILD */
     {%- endif %}
            {%- if impl['signature_verify'] %}
            {%- if 'api-with-context-string' in impl and impl['api-with-context-string'] %}
-	{% if impl.get('required_flags', false) %}	{% endif %}return (OQS_STATUS) {{ impl['signature_verify'] }}(signature, signature_len, message, message_len, NULL, 0, public_key);
+	{% if runtime_required_flags %}	{% endif %}return (OQS_STATUS) {{ impl['signature_verify'] }}(signature, signature_len, message, message_len, NULL, 0, public_key);
            {%- else %}
-	{% if impl.get('required_flags', false) %}	{% endif %}return (OQS_STATUS) {{ impl['signature_verify'] }}(signature, signature_len, message, message_len, public_key);
+	{% if runtime_required_flags %}	{% endif %}return (OQS_STATUS) {{ impl['signature_verify'] }}(signature, signature_len, message, message_len, public_key);
            {%- endif %}
            {%- else %}
-	{% if impl.get('required_flags', false) %}	{% endif %}return (OQS_STATUS) PQCLEAN_{{ scheme['pqclean_scheme_c']|upper }}_{{ impl['name']|upper }}_crypto_sign_verify(signature, signature_len, message, message_len, public_key);
+	{% if runtime_required_flags %}	{% endif %}return (OQS_STATUS) PQCLEAN_{{ scheme['pqclean_scheme_c']|upper }}_{{ impl['name']|upper }}_crypto_sign_verify(signature, signature_len, message, message_len, public_key);
            {%- endif %}
-    {%- if impl.get('required_flags', false) %}
+    {%- if runtime_required_flags %}
 #if defined(OQS_DIST_BUILD)
 	} else {
         {%- if 'api-with-context-string' in impl and impl['api-with-context-string'] %}
@@ -278,22 +281,23 @@ OQS_API OQS_STATUS OQS_SIG_{{ family }}_{{ scheme['scheme'] }}_verify(const uint
 {%- if 'api-with-context-string' in default_impl and default_impl['api-with-context-string'] %}
 OQS_API OQS_STATUS OQS_SIG_{{ family }}_{{ scheme['scheme'] }}_sign_with_ctx_str(uint8_t *signature, size_t *signature_len, const uint8_t *message, size_t message_len, const uint8_t *ctx_str, size_t ctx_str_len, const uint8_t *secret_key) {
     {%- for impl in scheme['metadata']['implementations'] if impl['name'] != scheme['default_implementation'] %}
+    {%- set runtime_required_flags = impl.get('runtime_required_flags', impl.get('required_flags', false)) %}
     {%- if loop.first %}
 #if defined(OQS_ENABLE_SIG_{{ family }}_{{ scheme['scheme'] }}_{{ impl['name'] }}) {%- if 'alias_scheme' in scheme %} || defined(OQS_ENABLE_SIG_{{ family }}_{{ scheme['alias_scheme'] }}_{{ impl['name'] }}){%- endif %}
     {%- else %}
 #elif defined(OQS_ENABLE_SIG_{{ family }}_{{ scheme['scheme'] }}_{{ impl['name'] }}) {%- if 'alias_scheme' in scheme %} || defined(OQS_ENABLE_SIG_{{ family }}_{{ scheme['alias_scheme'] }}_{{ impl['name'] }}){%- endif %}
     {%- endif %}
-    {%- if impl.get('required_flags', false) %}
+    {%- if runtime_required_flags %}
 #if defined(OQS_DIST_BUILD)
-	if ({%- for flag in impl['required_flags'] -%}OQS_CPU_has_extension(OQS_CPU_EXT_{{ flag|upper }}){%- if not loop.last %} && {% endif -%}{%- endfor -%}) {
+	if ({%- for flag in runtime_required_flags -%}OQS_CPU_has_extension(OQS_CPU_EXT_{{ flag|upper }}){%- if not loop.last %} && {% endif -%}{%- endfor -%}) {
 #endif /* OQS_DIST_BUILD */
     {%- endif %}
            {%- if impl['signature_signature'] %}
-	{% if impl.get('required_flags', false) %}	{% endif %}return (OQS_STATUS) {{ impl['signature_signature'] }}(signature, signature_len, message, message_len, ctx_str, ctx_str_len, secret_key);
+	{% if runtime_required_flags %}	{% endif %}return (OQS_STATUS) {{ impl['signature_signature'] }}(signature, signature_len, message, message_len, ctx_str, ctx_str_len, secret_key);
            {%- else %}
-	{% if impl.get('required_flags', false) %}	{% endif %}return (OQS_STATUS) PQCLEAN_{{ scheme['pqclean_scheme_c']|upper }}_{{ impl['name']|upper }}_crypto_sign_signature(signature, signature_len, message, message_len, ctx_str, ctx_str_len, secret_key);
+	{% if runtime_required_flags %}	{% endif %}return (OQS_STATUS) PQCLEAN_{{ scheme['pqclean_scheme_c']|upper }}_{{ impl['name']|upper }}_crypto_sign_signature(signature, signature_len, message, message_len, ctx_str, ctx_str_len, secret_key);
            {%- endif %}
-    {%- if impl.get('required_flags', false) %}
+    {%- if runtime_required_flags %}
 #if defined(OQS_DIST_BUILD)
 	} else {
 		return (OQS_STATUS) {{ scheme['metadata']['default_signature_signature'] }}(signature, signature_len, message, message_len, ctx_str, ctx_str_len, secret_key);
@@ -313,22 +317,23 @@ OQS_API OQS_STATUS OQS_SIG_{{ family }}_{{ scheme['scheme'] }}_sign_with_ctx_str
 
 OQS_API OQS_STATUS OQS_SIG_{{ family }}_{{ scheme['scheme'] }}_verify_with_ctx_str(const uint8_t *message, size_t message_len, const uint8_t *signature, size_t signature_len, const uint8_t *ctx_str, size_t ctx_str_len, const uint8_t *public_key) {
     {%- for impl in scheme['metadata']['implementations'] if impl['name'] != scheme['default_implementation'] %}
+    {%- set runtime_required_flags = impl.get('runtime_required_flags', impl.get('required_flags', false)) %}
     {%- if loop.first %}
 #if defined(OQS_ENABLE_SIG_{{ family }}_{{ scheme['scheme'] }}_{{ impl['name'] }}) {%- if 'alias_scheme' in scheme %} || defined(OQS_ENABLE_SIG_{{ family }}_{{ scheme['alias_scheme'] }}_{{ impl['name'] }}){%- endif %}
     {%- else %}
 #elif defined(OQS_ENABLE_SIG_{{ family }}_{{ scheme['scheme'] }}_{{ impl['name'] }}) {%- if 'alias_scheme' in scheme %} || defined(OQS_ENABLE_SIG_{{ family }}_{{ scheme['alias_scheme'] }}_{{ impl['name'] }}){%- endif %}
     {%- endif %}
-    {%- if impl.get('required_flags', false) %}
+    {%- if runtime_required_flags %}
 #if defined(OQS_DIST_BUILD)
-	if ({%- for flag in impl['required_flags'] -%}OQS_CPU_has_extension(OQS_CPU_EXT_{{ flag|upper }}){%- if not loop.last %} && {% endif -%}{%- endfor -%}) {
+	if ({%- for flag in runtime_required_flags -%}OQS_CPU_has_extension(OQS_CPU_EXT_{{ flag|upper }}){%- if not loop.last %} && {% endif -%}{%- endfor -%}) {
 #endif /* OQS_DIST_BUILD */
     {%- endif %}
            {%- if impl['signature_verify'] %}
-	{% if impl.get('required_flags', false) %}	{% endif %}return (OQS_STATUS) {{ impl['signature_verify'] }}(signature, signature_len, message, message_len, ctx_str, ctx_str_len, public_key);
+	{% if runtime_required_flags %}	{% endif %}return (OQS_STATUS) {{ impl['signature_verify'] }}(signature, signature_len, message, message_len, ctx_str, ctx_str_len, public_key);
            {%- else %}
-	{% if impl.get('required_flags', false) %}	{% endif %}return (OQS_STATUS) PQCLEAN_{{ scheme['pqclean_scheme_c']|upper }}_{{ impl['name']|upper }}_crypto_sign_verify(signature, signature_len, message, message_len, ctx_str, ctx_str_len, public_key);
+	{% if runtime_required_flags %}	{% endif %}return (OQS_STATUS) PQCLEAN_{{ scheme['pqclean_scheme_c']|upper }}_{{ impl['name']|upper }}_crypto_sign_verify(signature, signature_len, message, message_len, ctx_str, ctx_str_len, public_key);
            {%- endif %}
-    {%- if impl.get('required_flags', false) %}
+    {%- if runtime_required_flags %}
 #if defined(OQS_DIST_BUILD)
 	} else {
 		return (OQS_STATUS) {{ scheme['metadata']['default_verify_signature'] }}(signature, signature_len, message, message_len, ctx_str, ctx_str_len, public_key);

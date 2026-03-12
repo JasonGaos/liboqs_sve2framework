@@ -63,5 +63,8 @@ int main(void) {
 #if defined(__ARM_NEON)
 	printf("ARM_NEON;");
 #endif
+#if defined(__ARM_FEATURE_SVE2)
+	printf("ARM_SVE2;");
+#endif
 	return 0;
 }

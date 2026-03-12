@@ -64,6 +64,7 @@
 #cmakedefine OQS_USE_ARM_SHA2_INSTRUCTIONS 1
 #cmakedefine OQS_USE_ARM_SHA3_INSTRUCTIONS 1
 #cmakedefine OQS_USE_ARM_NEON_INSTRUCTIONS 1
+#cmakedefine OQS_USE_ARM_SVE2_INSTRUCTIONS 1
 
 #cmakedefine OQS_SPEED_USE_ARM_PMU 1
 
@@ -170,13 +171,16 @@
 #cmakedefine OQS_ENABLE_SIG_ML_DSA 1
 #cmakedefine OQS_ENABLE_SIG_ml_dsa_44 1
 #cmakedefine OQS_ENABLE_SIG_ml_dsa_44_x86_64 1
-#cmakedefine OQS_ENABLE_SIG_ml_dsa_44_aarch64 1
+#cmakedefine OQS_ENABLE_SIG_ml_dsa_44_aarch64_neon 1
+#cmakedefine OQS_ENABLE_SIG_ml_dsa_44_aarch64_sve2 1
 #cmakedefine OQS_ENABLE_SIG_ml_dsa_65 1
 #cmakedefine OQS_ENABLE_SIG_ml_dsa_65_x86_64 1
-#cmakedefine OQS_ENABLE_SIG_ml_dsa_65_aarch64 1
+#cmakedefine OQS_ENABLE_SIG_ml_dsa_65_aarch64_neon 1
+#cmakedefine OQS_ENABLE_SIG_ml_dsa_65_aarch64_sve2 1
 #cmakedefine OQS_ENABLE_SIG_ml_dsa_87 1
 #cmakedefine OQS_ENABLE_SIG_ml_dsa_87_x86_64 1
-#cmakedefine OQS_ENABLE_SIG_ml_dsa_87_aarch64 1
+#cmakedefine OQS_ENABLE_SIG_ml_dsa_87_aarch64_neon 1
+#cmakedefine OQS_ENABLE_SIG_ml_dsa_87_aarch64_sve2 1
 
 #cmakedefine OQS_ENABLE_SIG_FALCON 1
 #cmakedefine OQS_ENABLE_SIG_falcon_512 1
