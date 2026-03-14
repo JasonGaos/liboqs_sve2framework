@@ -635,7 +635,7 @@ endif()
 
 if(CMAKE_SYSTEM_NAME MATCHES "Linux|Darwin")
 if(OQS_DIST_ARM64_V8_BUILD OR OQS_USE_ARM_NEON_INSTRUCTIONS)
-    cmake_dependent_option(OQS_ENABLE_SIG_ml_dsa_44_aarch64_neon "" ON "OQS_ENABLE_SIG_ml_dsa_44" OFF)
+    cmake_dependent_option(OQS_ENABLE_SIG_ml_dsa_44_aarch64 "" ON "OQS_ENABLE_SIG_ml_dsa_44" OFF)
 endif()
 endif()
 
@@ -653,7 +653,7 @@ endif()
 
 if(CMAKE_SYSTEM_NAME MATCHES "Linux|Darwin")
 if(OQS_DIST_ARM64_V8_BUILD OR OQS_USE_ARM_NEON_INSTRUCTIONS)
-    cmake_dependent_option(OQS_ENABLE_SIG_ml_dsa_65_aarch64_neon "" ON "OQS_ENABLE_SIG_ml_dsa_65" OFF)
+    cmake_dependent_option(OQS_ENABLE_SIG_ml_dsa_65_aarch64 "" ON "OQS_ENABLE_SIG_ml_dsa_65" OFF)
 endif()
 endif()
 
@@ -671,7 +671,7 @@ endif()
 
 if(CMAKE_SYSTEM_NAME MATCHES "Linux|Darwin")
 if(OQS_DIST_ARM64_V8_BUILD OR OQS_USE_ARM_NEON_INSTRUCTIONS)
-    cmake_dependent_option(OQS_ENABLE_SIG_ml_dsa_87_aarch64_neon "" ON "OQS_ENABLE_SIG_ml_dsa_87" OFF)
+    cmake_dependent_option(OQS_ENABLE_SIG_ml_dsa_87_aarch64 "" ON "OQS_ENABLE_SIG_ml_dsa_87" OFF)
 endif()
 endif()
 

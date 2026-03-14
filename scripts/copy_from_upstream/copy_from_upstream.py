@@ -82,7 +82,7 @@ def _mldsa_signature_with_suffix(signature, suffix):
     return signature.replace("_AARCH64_", f"_AARCH64_{suffix}_")
 
 
-def split_mldsa_aarch64_implementations(family, scheme):
+def add_mldsa_sve2_implementation(family, scheme):
     if family["name"] != "ml_dsa":
         return
 
@@ -92,14 +92,8 @@ def split_mldsa_aarch64_implementations(family, scheme):
             implementations.append(impl)
             continue
 
-        neon_impl = deepcopy(impl)
-        neon_impl["name"] = "aarch64_neon"
-        neon_impl["folder_name"] = "aarch64"
-        neon_impl["runtime_required_flags"] = ["arm_neon"]
-        neon_impl["cmake_fixed_sources"] = MLDSA_SHARED_C_SOURCES
-        neon_impl["cmake_backend_glob_dir"] = "mldsa/src/native/aarch64_neon/src"
-        for signature_key in ["signature_keypair", "signature_signature", "signature_verify"]:
-            neon_impl[signature_key] = _mldsa_signature_with_suffix(neon_impl.get(signature_key), "NEON")
+        impl["cmake_fixed_sources"] = MLDSA_SHARED_C_SOURCES
+        impl["cmake_backend_glob_dir"] = "mldsa/src/native/aarch64/src"
 
         sve2_impl = deepcopy(impl)
         sve2_impl["name"] = "aarch64_sve2"
@@ -111,20 +105,20 @@ def split_mldsa_aarch64_implementations(family, scheme):
         for signature_key in ["signature_keypair", "signature_signature", "signature_verify"]:
             sve2_impl[signature_key] = _mldsa_signature_with_suffix(sve2_impl.get(signature_key), "SVE2")
 
-        implementations.extend([sve2_impl, neon_impl])
+        implementations.extend([sve2_impl, impl])
 
     scheme["metadata"]["implementations"] = implementations
 
 
 def prepare_mldsa_arm_backend(srcfolder, impl):
-    if impl not in {"aarch64_neon", "aarch64_sve2"}:
+    if impl != "aarch64_sve2":
         return
 
     config_src = os.path.join(srcfolder, "integration", "liboqs", "config_aarch64.h")
     if not os.path.exists(config_src):
         return
 
-    backend = "neon" if impl.endswith("_neon") else "sve2"
+    backend = "sve2"
     backend_upper = backend.upper()
     config_dst = os.path.join(srcfolder, "integration", "liboqs", f"config_aarch64_{backend}.h")
     config_body = file_get_contents(config_src)
@@ -144,15 +138,10 @@ def prepare_mldsa_arm_backend(srcfolder, impl):
     file_put_contents(config_dst, config_body)
 
     native_root = os.path.join(srcfolder, "mldsa", "src", "native")
-    if impl.endswith("_neon"):
-        neon_dir = os.path.join(native_root, "aarch64_neon")
-        shutil.rmtree(neon_dir, ignore_errors=True)
-        shutil.copytree(os.path.join(native_root, "aarch64"), neon_dir)
-    else:
-        sve2_dir = os.path.join(native_root, "aarch64_sve2")
-        shutil.rmtree(sve2_dir, ignore_errors=True)
-        os.makedirs(os.path.join(sve2_dir, "src"), exist_ok=True)
-        sve2_meta = """/*
+    sve2_dir = os.path.join(native_root, "aarch64_sve2")
+    shutil.rmtree(sve2_dir, ignore_errors=True)
+    os.makedirs(os.path.join(sve2_dir, "src"), exist_ok=True)
+    sve2_meta = """/*
  * Copyright (c) The mlkem-native project authors
  * Copyright (c) The mldsa-native project authors
  * SPDX-License-Identifier: Apache-2.0 OR ISC OR MIT
@@ -170,7 +159,7 @@ def prepare_mldsa_arm_backend(srcfolder, impl):
 
 #endif /* !MLD_NATIVE_AARCH64_SVE2_META_H */
 """
-        file_put_contents(os.path.join(sve2_dir, "meta.h"), sve2_meta)
+    file_put_contents(os.path.join(sve2_dir, "meta.h"), sve2_meta)
 
 def shell(command, expect=0):
     subprocess_stdout = None if DEBUG > 0 else subprocess.DEVNULL
@@ -406,7 +395,7 @@ def load_instructions(file='copy_from_upstream.yml'):
                                 metadata['implementations'].append(imp)
                                 break
             scheme['metadata'] = metadata
-            split_mldsa_aarch64_implementations(family, scheme)
+                add_mldsa_sve2_implementation(family, scheme)
             # Sort implementations so that memory_optimized ones come before
             # non-memory_optimized ones (preserving relative order within each group).
             # This ensures memopt implementations take priority in the #if/#elif dispatch chain.

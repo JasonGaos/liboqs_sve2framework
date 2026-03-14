@@ -64,8 +64,8 @@ if(OQS_ENABLE_SIG_ml_dsa_44_x86_64)
     set(_ML_DSA_OBJS ${_ML_DSA_OBJS} $<TARGET_OBJECTS:ml_dsa_44_x86_64>)
 endif()
 
-if(OQS_ENABLE_SIG_ml_dsa_44_aarch64_neon)
-    oqs_add_ml_dsa_aarch64_target(44 aarch64_neon config_aarch64_neon.h)
+if(OQS_ENABLE_SIG_ml_dsa_44_aarch64)
+    oqs_add_ml_dsa_aarch64_target(44 aarch64 config_aarch64.h)
 endif()
 
 if(OQS_ENABLE_SIG_ml_dsa_44_aarch64_sve2)
@@ -89,8 +89,8 @@ if(OQS_ENABLE_SIG_ml_dsa_65_x86_64)
     set(_ML_DSA_OBJS ${_ML_DSA_OBJS} $<TARGET_OBJECTS:ml_dsa_65_x86_64>)
 endif()
 
-if(OQS_ENABLE_SIG_ml_dsa_65_aarch64_neon)
-    oqs_add_ml_dsa_aarch64_target(65 aarch64_neon config_aarch64_neon.h)
+if(OQS_ENABLE_SIG_ml_dsa_65_aarch64)
+    oqs_add_ml_dsa_aarch64_target(65 aarch64 config_aarch64.h)
 endif()
 
 if(OQS_ENABLE_SIG_ml_dsa_65_aarch64_sve2)
@@ -114,8 +114,8 @@ if(OQS_ENABLE_SIG_ml_dsa_87_x86_64)
     set(_ML_DSA_OBJS ${_ML_DSA_OBJS} $<TARGET_OBJECTS:ml_dsa_87_x86_64>)
 endif()
 
-if(OQS_ENABLE_SIG_ml_dsa_87_aarch64_neon)
-    oqs_add_ml_dsa_aarch64_target(87 aarch64_neon config_aarch64_neon.h)
+if(OQS_ENABLE_SIG_ml_dsa_87_aarch64)
+    oqs_add_ml_dsa_aarch64_target(87 aarch64 config_aarch64.h)
 endif()
 
 if(OQS_ENABLE_SIG_ml_dsa_87_aarch64_sve2)
